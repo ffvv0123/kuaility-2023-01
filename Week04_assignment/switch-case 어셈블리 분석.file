@@ -1,0 +1,105 @@
+다음 코드는 Xcode에서 switch-case.c와 같은 코드를 디어셈블리 한 것이다.
+
+#include <stdio.h>
+
+int main() {
+    int number = 2;
+
+    switch (number) {
+    case 1:
+        printf("Number is 1.\n");
+        break;
+    case 2:
+        printf("Number is 2.\n");
+        break;
+    case 3:
+        printf("Number is 3.\n");
+        break;
+    default:
+        printf("Number is not 1, 2, or 3.\n");
+        break;
+    }
+
+    return 0;
+}
+
+
+
+
+# 함수의 시작
+switch-case`main:
+    0x100003ec0 <+0>:   sub    sp, sp, #0x30
+    0x100003ec4 <+4>:   stp    x29, x30, [sp, #0x20]
+    0x100003ec8 <+8>:   add    x29, sp, #0x20
+
+# 지역 변수 할당(number)
+    0x100003ecc <+12>:  stur   wzr, [x29, #-0x4]
+    0x100003ed0 <+16>:  stur   w0, [x29, #-0x8]
+    0x100003ed4 <+20>:  str    x1, [sp, #0x10]
+
+# switch 변수 값 설정
+# switch의 조건변수에 2를 대입
+    0x100003ed8 <+24>:  mov    w8, #0x2
+->  0x100003edc <+28>:  str    w8, [sp, #0xc]
+
+# switch-case 조건 비교
+# switch 설정 단계 + 조건변수와 1 값 비교
+    0x100003ee0 <+32>:  ldr    w8, [sp, #0xc]
+    0x100003ee4 <+36>:  str    w8, [sp, #0x8]
+    0x100003ee8 <+40>:  subs   w8, w8, #0x1
+    0x100003eec <+44>:  b.eq   0x100003f14               ; <+84> at main.c
+    0x100003ef0 <+48>:  b      0x100003ef4               ; <+52> at main.c
+
+위 코드에서 subs w8, w8, #0x1 은 w8 -= 1 을 의미한다.
+위 코드에서 b.eq는 조건변수와 설정값이 일치한다면 메모리를 <+84>부분으로 점프한다.
+위 코드에서 b는 조건변수와 설정값이 일치하지 않는 경우이다. 다음 값 비교인 <+52>로 넘어간다
+아래 값 비교에서도 비슷하게 진행된다.
+
+# 조건변수와 2 값 비교
+    0x100003ef4 <+52>:  ldr    w8, [sp, #0x8]
+    0x100003ef8 <+56>:  subs   w8, w8, #0x2
+    0x100003efc <+60>:  b.eq   0x100003f24               ; <+100> at main.c
+    0x100003f00 <+64>:  b      0x100003f04               ; <+68> at main.c
+
+# 조건변수와 3 값 비교
+    0x100003f04 <+68>:  ldr    w8, [sp, #0x8]
+    0x100003f08 <+72>:  subs   w8, w8, #0x3
+    0x100003f0c <+76>:  b.eq   0x100003f34               ; <+116> at main.c
+    0x100003f10 <+80>:  b      0x100003f44               ; <+132> at main.c
+    
+# case 1: 
+    0x100003f14 <+84>:  adrp   x0, 0
+    0x100003f18 <+88>:  add    x0, x0, #0xf70            ; "Number is 1.\n"
+    0x100003f1c <+92>:  bl     0x100003f64               ; symbol stub for: printf
+    0x100003f20 <+96>:  b      0x100003f54               ; <+148> at main.c
+       
+위 코드에서 b는 break가 걸림을 의미하고, switch-case를 탈출한다. <+148>로 점프
+아래 case와 default에서도 비슷하게 진행
+
+# case 2:    
+    0x100003f24 <+100>: adrp   x0, 0
+    0x100003f28 <+104>: add    x0, x0, #0xf7e            ; "Number is 2.\n"
+    0x100003f2c <+108>: bl     0x100003f64               ; symbol stub for: printf
+    0x100003f30 <+112>: b      0x100003f54               ; <+148> at main.c
+    
+# case 3:
+    0x100003f34 <+116>: adrp   x0, 0
+    0x100003f38 <+120>: add    x0, x0, #0xf8c            ; "Number is 3.\n"
+    0x100003f3c <+124>: bl     0x100003f64               ; symbol stub for: printf
+    0x100003f40 <+128>: b      0x100003f54               ; <+148> at main.c
+    
+# default:    
+    0x100003f44 <+132>: adrp   x0, 0
+    0x100003f48 <+136>: add    x0, x0, #0xf9a            ; "Number is not 1, 2, or 3.\n"
+    0x100003f4c <+140>: bl     0x100003f64               ; symbol stub for: printf
+    0x100003f50 <+144>: b      0x100003f54               ; <+148> at main.c
+    
+# 함수 종료    
+    0x100003f54 <+148>: mov    w0, #0x0
+    0x100003f58 <+152>: ldp    x29, x30, [sp, #0x20]
+    0x100003f5c <+156>: add    sp, sp, #0x30
+    0x100003f60 <+160>: ret    
+
+간략하게 switch-case에 관련된 코드를 어셈블리로 분석을 해보았다.
+이 함수는 실행과정에서 메모리 주소의 점프(?)가 빈번하게 일어난다.
+따라서, 효율적이고 메모리를 잘 활용하기 위해서는 실행되는 순서를 고려할 필요가 있을 것 같다.
